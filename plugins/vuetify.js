@@ -1,7 +1,8 @@
 // plugins/vuetify.js
 import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
+import { VApp, VBtn, VIcon, VContainer, VCard, VCardText, VCardTitle, VCardSubtitle, VProgressCircular, VCarousel, VCarouselItem, VImg, VRow, VChip, VChipGroup, VDialog, VSpacer, VCol, VTextField, VDatePicker, VPagination, VAlert, VMain } from 'vuetify/components'
+import { Ripple } from 'vuetify/directives'
+import { ru } from 'vuetify/locale'
 
 // Ensure styles are imported
 import 'vuetify/styles'
@@ -9,12 +10,41 @@ import '@mdi/font/css/materialdesignicons.css'
 
 export default defineNuxtPlugin((nuxtApp) => {
   const vuetify = createVuetify({
-    components,
-    directives,
+    components: {
+      VApp,
+      VMain,
+      VBtn,
+      VIcon,
+      VContainer,
+      VCard,
+      VCardText,
+      VCardTitle,
+      VCardSubtitle,
+      VProgressCircular,
+      VCarousel,
+      VCarouselItem,
+      VImg,
+      VRow,
+      VChip,
+      VChipGroup,
+      VDialog,
+      VSpacer,
+      VCol,
+      VTextField,
+      VDatePicker,
+      VPagination,
+      VAlert
+    },
+    directives: {
+      Ripple
+    },
     theme: {
       defaultTheme: 'light'
     },
-    // You can add more Vuetify options here
+    locale: {
+      locale: 'ru',
+      messages: { ru }
+    }
   })
 
   nuxtApp.vueApp.use(vuetify)

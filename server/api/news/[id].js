@@ -1,22 +1,53 @@
 import axios from 'axios';
 import { parseString } from 'xml2js';
 import { promisify } from 'util';
-import { decode } from 'html-entities'; // Add this import
+import { decode } from 'html-entities'; 
 
 const parseXml = promisify(parseString);
 
+function extractImages(item) {
+  let images = [];
+
+  if (item.enclosure) {
+    images = item.enclosure.map(enc => ({
+      url: enc.$.url,
+      type: enc.$.type,
+      description: null
+    }));
+  }
+
+  if (item['rbc_news:related_links'] && item['rbc_news:related_links'][0] && item['rbc_news:related_links'][0].link) {
+    item['rbc_news:related_links'][0].link.forEach(link => {
+      if (link['rbc_news:thumbnail'] && link['rbc_news:thumbnail'][0]) {
+        images.push({
+          url: link['rbc_news:thumbnail'][0].url[0],
+          type: link['rbc_news:thumbnail'][0].type[0],
+          description: link['rbc_news:thumbnail'][0].source ? decode(link['rbc_news:thumbnail'][0].source[0]) : null
+        });
+      }
+    });
+  }
+
+  return images;
+}
+
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig();
   const id = decodeURIComponent(event.context.params.id);
 
   try {
-    console.log('Fetching news with id:', id);
-    const response = await axios.get('http://static.feed.rbc.ru/rbc/logical/footer/news.rss');
+    const response = await axios.get(config.public.newsRssUrl, { 
+      timeout: config.apiTimeout 
+    });
     const result = await parseXml(response.data);
     
     console.log('RSS feed parsed, searching for news item');
     if (!result.rss || !result.rss.channel || !result.rss.channel[0] || !result.rss.channel[0].item) {
       console.error('Unexpected RSS structure:', JSON.stringify(result, null, 2));
-      throw new Error('Unexpected RSS structure');
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Unexpected RSS structure',
+      });
     }
 
     const newsItem = result.rss.channel[0].item.find(item => item.link && item.link[0] === id);
@@ -31,20 +62,7 @@ export default defineEventHandler(async (event) => {
 
     console.log('News item found, processing data');
     
-    let images = [];
-    if (newsItem['rbc_news:image']) {
-      images = newsItem['rbc_news:image'].map(image => ({
-        url: image['rbc_news:url'] ? image['rbc_news:url'][0] : null,
-        description: image['rbc_news:description'] ? decode(image['rbc_news:description'][0].replace(/<\/?p>/g, '')) : null,
-        type: image['rbc_news:type'] ? image['rbc_news:type'][0] : null
-      }));
-    } else if (newsItem.enclosure) {
-      images = newsItem.enclosure.map((enclosure) => ({
-        url: enclosure.$['url'],
-        description: null,
-        type: enclosure.$['type']
-      }));
-    }
+    const images = extractImages(newsItem);
 
     return {
       title: newsItem.title ? decode(newsItem.title[0]) : null,

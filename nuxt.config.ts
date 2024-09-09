@@ -1,7 +1,6 @@
 export default defineNuxtConfig({
-  // Remove this line if you're importing styles in the plugin
-  // css: ['vuetify/lib/styles/main.sass'],
-
+  ssr: true,
+  modules: ['@pinia/nuxt', '@nuxt/image'],
   build: {
     transpile: ['vuetify'],
   },
@@ -10,7 +9,6 @@ export default defineNuxtConfig({
     define: {
       'process.env.DEBUG': false,
     },
-    // Add this to ensure Vuetify styles are processed correctly
     css: {
       preprocessorOptions: {
         sass: {
@@ -21,9 +19,14 @@ export default defineNuxtConfig({
   },
 
   plugins: ['@/plugins/vuetify'],
-
-  // Add this to ensure ssr compatibility
-  ssr: true,
-
   compatibilityDate: '2024-09-07',
+  runtimeConfig: {
+    apiRetries: parseInt(process.env.API_RETRIES!, 10),
+    apiRetryDelay: parseInt(process.env.API_RETRY_DELAY!, 10),
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
+      newsRssUrl: process.env.NEWS_RSS_URL,
+      apiTimeout: parseInt(process.env.API_TIMEOUT!, 10),
+    }
+  },
 })
